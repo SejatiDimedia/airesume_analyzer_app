@@ -127,3 +127,35 @@ async def generate_cover_letter(
     )
 
     return {"cover_letter": cover_letter}
+
+from pydantic import BaseModel
+
+class JobDescriptionScrapeRequest(BaseModel):
+    url: str
+
+@router.post("/scrape-jd")
+@limiter.limit("20/hour")
+async def scrape_job_description(
+    request: Request,
+    obj_in: JobDescriptionScrapeRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Scrape and extract job details from a given URL using AI.
+    """
+    from app.services import ai_service
+    
+    url_str = obj_in.url.strip()
+    if not url_str.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="URL tidak valid. Harus diawali dengan http:// atau https://")
+        
+    try:
+        details = await ai_service.scrape_and_extract_job_details(url_str)
+        return {
+            "job_title": details.job_title,
+            "job_description": details.job_description
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Terjadi kesalahan internal: {str(e)}")

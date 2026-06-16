@@ -69,13 +69,54 @@
         
         <!-- Section 2: Job Description -->
         <section class="space-y-4">
-          <div class="flex justify-between items-center">
+          <div class="flex justify-between items-center flex-wrap gap-2">
             <h2 class="font-headline-sm text-headline-sm text-on-surface">Job Description</h2>
-            <div class="flex items-center gap-1 bg-tertiary-fixed/30 px-2 py-1 rounded-full">
-              <span class="material-symbols-outlined text-on-tertiary-fixed-variant text-[16px]">info</span>
-              <span class="text-on-tertiary-fixed-variant font-label-sm text-label-sm">Include requirements</span>
+            <div class="flex items-center gap-3">
+              <button 
+                @click="showUrlInput = !showUrlInput" 
+                class="text-primary hover:text-primary-hover transition-colors font-label-md text-label-md flex items-center gap-1 hover:underline bg-primary/5 px-3 py-1 rounded-lg"
+              >
+                <span class="material-symbols-outlined text-[16px]">{{ showUrlInput ? 'close' : 'link' }}</span>
+                {{ showUrlInput ? 'Cancel Import' : 'Import from URL' }}
+              </button>
+              <div class="flex items-center gap-1 bg-tertiary-fixed/30 px-2 py-1 rounded-full">
+                <span class="material-symbols-outlined text-on-tertiary-fixed-variant text-[16px]">info</span>
+                <span class="text-on-tertiary-fixed-variant font-label-sm text-label-sm">Include requirements</span>
+              </div>
             </div>
           </div>
+
+          <!-- URL Import Input Panel -->
+          <div v-if="showUrlInput" class="p-4 bg-surface-container rounded-xl border border-outline-variant/30 space-y-3 animate-fade-in">
+            <p class="text-xs text-on-surface-variant font-body-sm">Masukkan URL lowongan kerja (LinkedIn, Jobstreet, dsb) untuk mengekstrak detail lowongan menggunakan AI.</p>
+            <div class="flex gap-2">
+              <Input 
+                v-model="jdUrl"
+                placeholder="https://example.com/job-vacancy" 
+                class="flex-1 rounded-lg border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary/20 font-body-sm text-body-sm px-4 py-2 h-10 bg-white"
+                :disabled="isFetchingUrl"
+                @keyup.enter="fetchJobDescription"
+              />
+              <Button 
+                @click="fetchJobDescription" 
+                :disabled="isFetchingUrl || !jdUrl.trim()"
+                class="bg-primary !text-white px-5 rounded-lg h-10 font-label-md text-label-md flex items-center gap-1.5"
+              >
+                <span class="material-symbols-outlined text-[18px] animate-spin" v-if="isFetchingUrl">sync</span>
+                <span class="material-symbols-outlined text-[18px]" v-else>cloud_download</span>
+                {{ isFetchingUrl ? 'Fetching...' : 'Import' }}
+              </Button>
+            </div>
+            <p v-if="urlErrorMessage" class="text-xs text-error flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">error</span>
+              {{ urlErrorMessage }}
+            </p>
+            <p v-if="urlSuccessMessage" class="text-xs text-emerald-600 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">check_circle</span>
+              {{ urlSuccessMessage }}
+            </p>
+          </div>
+
           <div class="relative">
             <Textarea 
               v-model="jobDescription"
@@ -156,6 +197,7 @@ import { Input } from '~/components/ui/input/index'
 import { Label } from '~/components/ui/label/index'
 import { useAnalysis } from '~/composables/useAnalysis'
 import { useProfile } from '~/composables/useProfile'
+import { useAuth } from '~/composables/useAuth'
 import { onMounted } from 'vue'
 
 definePageMeta({
@@ -165,6 +207,7 @@ definePageMeta({
 const router = useRouter()
 const { analyzeResume } = useAnalysis()
 const { fetchSavedResume } = useProfile()
+const { apiFetch } = useAuth()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
@@ -172,6 +215,49 @@ const jobDescription = ref('')
 const analysisLabel = ref('')
 const isAnalyzing = ref(false)
 const errorMessage = ref('')
+
+// URL Scrape state
+const showUrlInput = ref(false)
+const jdUrl = ref('')
+const isFetchingUrl = ref(false)
+const urlErrorMessage = ref('')
+const urlSuccessMessage = ref('')
+
+const fetchJobDescription = async () => {
+  if (!jdUrl.value.trim()) return
+  isFetchingUrl.value = true
+  urlErrorMessage.value = ''
+  urlSuccessMessage.value = ''
+  
+  try {
+    const res = await apiFetch<{ job_title: string, job_description: string }>(
+      '/analysis/scrape-jd',
+      {
+        method: 'POST',
+        body: { url: jdUrl.value.trim() }
+      }
+    )
+    if (res && res.job_description) {
+      jobDescription.value = res.job_description
+      if (res.job_title) {
+        analysisLabel.value = res.job_title
+      }
+      urlSuccessMessage.value = 'Deskripsi pekerjaan berhasil diekstrak!'
+      // Hide input after a short delay
+      setTimeout(() => {
+        showUrlInput.value = false
+        urlSuccessMessage.value = ''
+        jdUrl.value = ''
+      }, 2000)
+    } else {
+      urlErrorMessage.value = 'Gagal mengekstrak deskripsi pekerjaan. Coba salin manual.'
+    }
+  } catch (error: any) {
+    urlErrorMessage.value = error.data?.detail || 'Gagal mengambil deskripsi dari URL tersebut.'
+  } finally {
+    isFetchingUrl.value = false
+  }
+}
 
 const hasSavedProfile = ref(false)
 const useSavedProfile = ref(false)

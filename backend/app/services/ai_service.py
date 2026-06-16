@@ -3,6 +3,8 @@ from typing import List
 from google import genai
 from app.config import settings
 import logging
+import re
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -119,3 +121,95 @@ async def generate_cover_letter(resume_text: str, job_description: str, job_titl
     except Exception as e:
         logger.error(f"Error calling Gemini API for cover letter: {str(e)}")
         raise e
+
+class ExtractedJobDetails(BaseModel):
+    job_title: str = Field(description="The job title and company name (e.g. 'Software Engineer at Google') if found, otherwise just the job title.")
+    job_description: str = Field(description="The cleaned job description containing responsibilities, requirements, and benefits.")
+
+def clean_html(html_content: str) -> str:
+    """
+    Cleans raw HTML by stripping scripts, styles, metadata, and tags,
+    collapsing whitespace, to extract pure readable text.
+    """
+    # Remove script, style, noscript, iframe, svg, head, header, footer, nav
+    html_content = re.sub(
+        r'<(script|style|noscript|iframe|svg|head|header|footer|nav)[^>]*?>.*?</\1>',
+        ' ',
+        html_content,
+        flags=re.DOTALL | re.IGNORECASE
+    )
+    # Remove comment blocks
+    html_content = re.sub(r'<!--.*?-->', ' ', html_content, flags=re.DOTALL)
+    # Strip remaining HTML tags
+    text = re.sub(r'<[^>]+>', ' ', html_content)
+    # Collapse multiple whitespaces and newlines
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+async def scrape_and_extract_job_details(url: str) -> ExtractedJobDetails:
+    """
+    Scrapes a job posting web page and uses Gemini to extract structured job details.
+    """
+    if not settings.GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY is not set. Cannot parse URL.")
+
+    # 1. Scrape the URL
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+    }
+    
+    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client_httpx:
+        try:
+            response = await client_httpx.get(url, headers=headers)
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error fetching job URL {url}: {e.response.status_code}")
+            raise ValueError(f"Situs lowongan kerja menolak akses otomatis (Status: {e.response.status_code}). Silakan salin deskripsi secara manual.")
+        except Exception as e:
+            logger.error(f"Error fetching job URL {url}: {str(e)}")
+            raise ValueError("Gagal menghubungi URL tersebut. Pastikan tautan benar dan aktif.")
+
+    # 2. Clean HTML content
+    raw_text = clean_html(response.text)
+    
+    # Truncate text to avoid token limits
+    words = raw_text.split()
+    if len(words) > 10000:
+        raw_text = " ".join(words[:10000])
+
+    # 3. Call Gemini using Structured Outputs
+    system_prompt = (
+        "You are an expert recruiter. You will be given the raw text scraped from a job listing web page. "
+        "Your task is to identify and extract the job details:\n"
+        "1. The Job Title (and company name if available, e.g. 'Software Engineer at Google').\n"
+        "2. The full Job Description (responsibilities, requirements, qualifications, benefits, etc.).\n"
+        "Do NOT include headers, footers, navigation links, copyright text, cookie policy warnings, or other unrelated text.\n"
+        "If you cannot find a clear job description in the text, return empty strings."
+    )
+
+    user_prompt = f"""
+### Scraped Page Content:
+{raw_text}
+"""
+
+    try:
+        response = await client.aio.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=user_prompt,
+            config=genai.types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=ExtractedJobDetails,
+                system_instruction=system_prompt,
+                temperature=0.0
+            )
+        )
+        
+        result = response.parsed
+        if not result or not result.job_title:
+            raise ValueError("Tidak berhasil mendeteksi deskripsi pekerjaan di halaman tersebut. Silakan salin manual.")
+        return result
+    except Exception as e:
+        logger.error(f"Error extracting JD details via Gemini: {str(e)}")
+        raise ValueError(f"Gagal memproses deskripsi pekerjaan dengan AI: {str(e)}")
