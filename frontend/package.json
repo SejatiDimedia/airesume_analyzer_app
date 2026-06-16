@@ -1,0 +1,33 @@
+{
+  "name": "frontend",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@pinia/nuxt": "^0.11.3",
+    "@vueuse/nuxt": "^14.3.0",
+    "lucide-vue-next": "^1.0.0",
+    "nuxt": "^4.4.8",
+    "vee-validate": "^4.15.1",
+    "vue": "^3.5.35",
+    "vue-router": "^5.1.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "autoprefixer": "^10.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "postcss": "^8.5.15",
+    "radix-vue": "^1.9.17",
+    "shadcn-vue": "^2.7.4",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^3.4.19"
+  }
+}
