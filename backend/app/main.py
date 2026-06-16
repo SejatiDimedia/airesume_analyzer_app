@@ -33,9 +33,9 @@ app.add_middleware(
 
 
 # Mount routers
-app.include_router(auth.router, prefix=settings.API_V1_STR + "/auth", tags=["auth"])
-app.include_router(upload.router, prefix=settings.API_V1_STR + "/upload", tags=["upload"])
-app.include_router(analysis.router, prefix=settings.API_V1_STR + "/analyses", tags=["analyses"])
+app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(upload.router, prefix=settings.API_V1_STR)
+app.include_router(analysis.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():

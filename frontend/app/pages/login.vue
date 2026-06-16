@@ -26,7 +26,8 @@
           id="email" 
           type="email" 
           placeholder="alex@example.com" 
-          v-bind="email" 
+          v-model="email" 
+          v-bind="emailProps"
           :class="['h-12 text-base rounded-lg', {'border-destructive': errors.email}]" 
         />
         <p class="text-sm font-medium text-destructive" v-if="errors.email">{{ errors.email }}</p>
@@ -42,7 +43,8 @@
             id="password" 
             :type="showPassword ? 'text' : 'password'" 
             placeholder="••••••••" 
-            v-bind="password" 
+            v-model="password" 
+            v-bind="passwordProps"
             :class="['h-12 text-base rounded-lg pr-12', {'border-destructive': errors.password}]" 
           />
           <button 
@@ -102,7 +104,8 @@ import { Button } from '~/components/ui/button/index'
 import { Alert, AlertTitle, AlertDescription } from '~/components/ui/alert/index'
 
 definePageMeta({
-  layout: false
+  layout: false,
+  middleware: 'guest'
 })
 
 const { login } = useAuth()
@@ -118,8 +121,8 @@ const { handleSubmit, defineField, errors, isSubmitting } = useForm({
   validationSchema: formSchema,
 })
 
-const [email] = defineField('email')
-const [password] = defineField('password')
+const [email, emailProps] = defineField('email')
+const [password, passwordProps] = defineField('password')
 
 const onSubmit = handleSubmit(async (values) => {
   errorMessage.value = ''

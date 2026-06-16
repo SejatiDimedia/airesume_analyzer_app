@@ -10,19 +10,18 @@ export function useAuth() {
   // Create a reusable fetch instance that automatically attaches the bearer token
   const apiFetch = $fetch.create({
     baseURL: config.public.apiBaseUrl as string,
-    onRequest({ request, options }) {
-      const token = useCookie('access_token').value
+    onRequest({ options }) {
+      const token = useCookie('access_token', { path: '/' }).value
       if (token) {
-        options.headers = options.headers || {}
-        // @ts-ignore
-        options.headers['Authorization'] = `Bearer ${token}`
+        options.headers = new Headers(options.headers || {})
+        options.headers.set('Authorization', `Bearer ${token}`)
       }
     }
   })
 
   const login = async (data: any) => {
-    // FastAPI OAuth2PasswordRequestForm expects application/x-www-form-urlencoded
     const formData = new URLSearchParams()
+    formData.append('grant_type', 'password')
     formData.append('username', data.email)
     formData.append('password', data.password)
 
@@ -35,7 +34,7 @@ export function useAuth() {
         body: formData.toString()
       })
       
-      const tokenCookie = useCookie('access_token', { maxAge: 60 * 60 * 24 * 7 })
+      const tokenCookie = useCookie('access_token', { maxAge: 60 * 60 * 24 * 7, path: '/' })
       tokenCookie.value = res.access_token
       
       await fetchMe()
@@ -62,7 +61,7 @@ export function useAuth() {
   }
 
   const fetchMe = async () => {
-    const token = useCookie('access_token').value
+    const token = useCookie('access_token', { path: '/' }).value
     if (!token) {
       authStore.clearUser()
       return
@@ -72,12 +71,12 @@ export function useAuth() {
       authStore.setUser(user)
     } catch (error) {
       authStore.clearUser()
-      useCookie('access_token').value = null
+      useCookie('access_token', { path: '/' }).value = null
     }
   }
 
   const logout = () => {
-    useCookie('access_token').value = null
+    useCookie('access_token', { path: '/' }).value = null
     authStore.clearUser()
     router.push('/login')
   }

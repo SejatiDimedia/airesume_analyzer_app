@@ -11,7 +11,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     await fetchMe()
   }
 
-  if (!authStore.isAuthenticated) {
-    return navigateTo('/login')
+  // If authenticated, redirect away from guest-only pages
+  if (authStore.isAuthenticated) {
+    return navigateTo('/dashboard')
   }
 })

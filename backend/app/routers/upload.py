@@ -3,7 +3,7 @@ from app.dependencies import get_current_user
 from app.models.user import User
 from app.services.file_service import extract_text
 
-router = APIRouter()
+router = APIRouter(prefix="/upload", tags=["upload"])
 
 @router.post("/test-parse")
 async def test_parse_resume(

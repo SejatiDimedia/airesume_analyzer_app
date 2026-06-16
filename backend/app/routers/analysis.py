@@ -12,7 +12,7 @@ from app.schemas.analysis import (
 )
 from app.services import analysis_service
 
-router = APIRouter()
+router = APIRouter(prefix="/analysis", tags=["analysis"])
 
 @router.post("/", response_model=AnalysisResponse, status_code=status.HTTP_201_CREATED)
 async def create_analysis(

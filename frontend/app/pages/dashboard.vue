@@ -12,15 +12,15 @@
       <section class="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 py-1">
         <div class="flex-none bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 min-w-[130px] shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
           <span class="font-label-sm text-label-sm text-on-surface-variant block mb-1">Analyses</span>
-          <span class="font-headline-sm text-headline-sm font-bold text-primary">12</span>
+          <span class="font-headline-sm text-headline-sm font-bold text-primary">{{ totalAnalyses }}</span>
         </div>
         <div class="flex-none bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 min-w-[130px] shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
           <span class="font-label-sm text-label-sm text-on-surface-variant block mb-1">Avg Score</span>
-          <span class="font-headline-sm text-headline-sm font-bold text-tertiary">74%</span>
+          <span class="font-headline-sm text-headline-sm font-bold text-tertiary">{{ avgScore }}%</span>
         </div>
         <div class="flex-none bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 min-w-[130px] shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
           <span class="font-label-sm text-label-sm text-on-surface-variant block mb-1">Best Score</span>
-          <span class="font-headline-sm text-headline-sm font-bold text-primary-container text-on-primary-container inline-block px-2 rounded-md">91%</span>
+          <span class="font-headline-sm text-headline-sm font-bold text-primary-container text-on-primary-container inline-block px-2 rounded-md">{{ bestScore }}%</span>
         </div>
       </section>
 
@@ -42,47 +42,16 @@
 
       <!-- Analysis List -->
       <section class="space-y-4" v-if="hasAnalyses">
-        <!-- Card 1 -->
-        <div @click="navigateToResult" class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 flex items-center gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.08)] active:bg-surface-variant/20 transition-colors cursor-pointer">
-          <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-            <span class="material-symbols-outlined text-[28px]">description</span>
+        <div v-for="analysis in analyses" :key="analysis.id" @click="navigateToResult(analysis.id)" class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 flex items-center gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.08)] active:bg-surface-variant/20 transition-colors cursor-pointer">
+          <div class="w-12 h-12 rounded-lg flex items-center justify-center" :class="getScoreColorClass(analysis.match_score, 'bg').replace('text', 'bg').replace('500', '100') + ' ' + getScoreTextClass(analysis.match_score)">
+            <span class="material-symbols-outlined text-[28px]">{{ analysis.match_score >= 80 ? 'description' : analysis.match_score >= 60 ? 'history' : 'warning' }}</span>
           </div>
           <div class="flex-1 min-w-0">
-            <h3 class="font-label-md text-label-md text-on-surface truncate">Backend_Engineer.pdf</h3>
-            <p class="font-body-sm text-body-sm text-on-surface-variant">12 Jun • 4 matches</p>
+            <h3 class="font-label-md text-label-md text-on-surface truncate">{{ analysis.label || 'Untitled Analysis' }}</h3>
+            <p class="font-body-sm text-body-sm text-on-surface-variant">{{ formatDate(analysis.created_at) }}</p>
           </div>
           <div class="text-right">
-            <div class="font-headline-sm text-headline-sm font-bold text-primary">91%</div>
-            <span class="font-label-sm text-label-sm text-on-surface-variant">Score</span>
-          </div>
-        </div>
-
-        <!-- Card 2 -->
-        <div @click="navigateToResult" class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 flex items-center gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.08)] active:bg-surface-variant/20 transition-colors cursor-pointer">
-          <div class="w-12 h-12 rounded-lg bg-secondary-container/30 flex items-center justify-center text-secondary">
-            <span class="material-symbols-outlined text-[28px]">history</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-label-md text-label-md text-on-surface truncate">Senior_Developer.pdf</h3>
-            <p class="font-body-sm text-body-sm text-on-surface-variant">10 Jun • 4 matches</p>
-          </div>
-          <div class="text-right">
-            <div class="font-headline-sm text-headline-sm font-bold text-tertiary">74%</div>
-            <span class="font-label-sm text-label-sm text-on-surface-variant">Score</span>
-          </div>
-        </div>
-
-        <!-- Card 3 -->
-        <div @click="navigateToResult" class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-4 flex items-center gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.08)] active:bg-surface-variant/20 transition-colors cursor-pointer">
-          <div class="w-12 h-12 rounded-lg bg-error-container/20 flex items-center justify-center text-error">
-            <span class="material-symbols-outlined text-[28px]">warning</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-label-md text-label-md text-on-surface truncate">Fullstack_Lead.pdf</h3>
-            <p class="font-body-sm text-body-sm text-on-surface-variant">08 Jun • 2 matches</p>
-          </div>
-          <div class="text-right">
-            <div class="font-headline-sm text-headline-sm font-bold text-error">48%</div>
+            <div class="font-headline-sm text-headline-sm font-bold" :class="getScoreTextClass(analysis.match_score)">{{ Math.round(analysis.match_score) }}%</div>
             <span class="font-label-sm text-label-sm text-on-surface-variant">Score</span>
           </div>
         </div>
@@ -151,7 +120,7 @@
             </div>
             <div>
               <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Total Analyses</p>
-              <p class="text-2xl font-bold text-on-surface">12</p>
+              <p class="text-2xl font-bold text-on-surface">{{ totalAnalyses }}</p>
             </div>
           </Card>
           
@@ -162,7 +131,7 @@
             </div>
             <div>
               <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Average Score</p>
-              <p class="text-2xl font-bold text-on-surface">74%</p>
+              <p class="text-2xl font-bold text-on-surface">{{ avgScore }}%</p>
             </div>
           </Card>
           
@@ -173,110 +142,29 @@
             </div>
             <div>
               <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Best Score</p>
-              <p class="text-2xl font-bold text-on-surface">91%</p>
+              <p class="text-2xl font-bold text-on-surface">{{ bestScore }}%</p>
             </div>
           </Card>
         </div>
 
         <!-- Analysis List -->
         <div class="space-y-4">
-          <!-- Card 1 (Emerald - High) -->
-          <div class="bg-white/80 backdrop-blur-md group border border-outline-variant/30 p-6 rounded-xl hover:border-primary/50 transition-all flex flex-col md:flex-row items-center justify-between gap-6 hover:-translate-y-0.5 duration-300 cursor-pointer" @click="navigateToResult">
+          <div v-for="analysis in analyses" :key="analysis.id" class="bg-white/80 backdrop-blur-md group border border-outline-variant/30 p-6 rounded-xl hover:border-primary/50 transition-all flex flex-col md:flex-row items-center justify-between gap-6 hover:-translate-y-0.5 duration-300 cursor-pointer" @click="navigateToResult(analysis.id)">
             <div class="flex items-center gap-6 w-full md:w-auto">
               <div class="relative w-16 h-16 flex items-center justify-center">
                 <svg class="w-full h-full -rotate-90" viewBox="0 0 64 64">
                   <circle class="text-outline-variant/20" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
-                  <circle class="text-emerald-500" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.93" stroke-dashoffset="15.83" stroke-width="4" stroke-linecap="round"></circle>
+                  <circle :class="getScoreColorClass(analysis.match_score, 'text')" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.93" :stroke-dashoffset="175.93 - (175.93 * analysis.match_score / 100)" stroke-width="4" stroke-linecap="round"></circle>
                 </svg>
-                <span class="absolute font-bold text-emerald-700">91%</span>
+                <span class="absolute font-bold" :class="getScoreTextClass(analysis.match_score)">{{ Math.round(analysis.match_score) }}%</span>
               </div>
               <div>
-                <h3 class="text-lg font-bold text-on-surface mb-1">Backend Engineer — Tokopedia</h3>
-                <p class="text-sm text-on-surface-variant">12 Jun 2026 · <span class="text-emerald-600 font-bold">4 matched</span> · 1 missing</p>
+                <h3 class="text-lg font-bold text-on-surface mb-1">{{ analysis.label || 'Untitled Analysis' }}</h3>
+                <p class="text-sm text-on-surface-variant">{{ formatDate(analysis.created_at) }} · <span class="font-bold" :class="getScoreTextClass(analysis.match_score)">{{ analysis.match_score > 70 ? 'Good Match' : 'Needs Improvement' }}</span></p>
               </div>
             </div>
             <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-              <div class="flex gap-2">
-                <span class="px-2 py-1 bg-surface-variant text-on-surface-variant text-[10px] uppercase font-bold rounded">Python</span>
-                <span class="px-2 py-1 bg-surface-variant text-on-surface-variant text-[10px] uppercase font-bold rounded">AWS</span>
-              </div>
-              <Button variant="ghost" class="text-primary font-bold flex items-center gap-1 hover:bg-primary-fixed/30 px-4 py-2 h-auto rounded-lg transition-colors" @click.stop="navigateToResult">
-                View <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </Button>
-            </div>
-          </div>
-
-          <!-- Card 2 (Amber - Medium) -->
-          <div class="bg-white/80 backdrop-blur-md group border border-outline-variant/30 p-6 rounded-xl hover:border-primary/50 transition-all flex flex-col md:flex-row items-center justify-between gap-6 hover:-translate-y-0.5 duration-300">
-            <div class="flex items-center gap-6 w-full md:w-auto">
-              <div class="relative w-16 h-16 flex items-center justify-center">
-                <svg class="w-full h-full -rotate-90" viewBox="0 0 64 64">
-                  <circle class="text-outline-variant/20" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
-                  <circle class="text-amber-500" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.93" stroke-dashoffset="45.74" stroke-width="4" stroke-linecap="round"></circle>
-                </svg>
-                <span class="absolute font-bold text-amber-700">74%</span>
-              </div>
-              <div>
-                <h3 class="text-lg font-bold text-on-surface mb-1">Senior Developer — GoTo Group</h3>
-                <p class="text-sm text-on-surface-variant">10 Jun 2026 · <span class="text-amber-600 font-bold">4 matched</span> · 3 missing</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-              <div class="flex gap-2">
-                <span class="px-2 py-1 bg-surface-variant text-on-surface-variant text-[10px] uppercase font-bold rounded">React</span>
-                <span class="px-2 py-1 bg-surface-variant text-on-surface-variant text-[10px] uppercase font-bold rounded">Leadership</span>
-              </div>
-              <Button variant="ghost" class="text-primary font-bold flex items-center gap-1 hover:bg-primary-fixed/30 px-4 py-2 h-auto rounded-lg transition-colors">
-                View <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </Button>
-            </div>
-          </div>
-
-          <!-- Card 3 (Rose - Low) -->
-          <div class="bg-white/80 backdrop-blur-md group border border-outline-variant/30 p-6 rounded-xl hover:border-primary/50 transition-all flex flex-col md:flex-row items-center justify-between gap-6 hover:-translate-y-0.5 duration-300">
-            <div class="flex items-center gap-6 w-full md:w-auto">
-              <div class="relative w-16 h-16 flex items-center justify-center">
-                <svg class="w-full h-full -rotate-90" viewBox="0 0 64 64">
-                  <circle class="text-outline-variant/20" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
-                  <circle class="text-error" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.93" stroke-dashoffset="91.48" stroke-width="4" stroke-linecap="round"></circle>
-                </svg>
-                <span class="absolute font-bold text-error">48%</span>
-              </div>
-              <div>
-                <h3 class="text-lg font-bold text-on-surface mb-1">Fullstack Lead — Shopee</h3>
-                <p class="text-sm text-on-surface-variant">08 Jun 2026 · <span class="text-error font-bold">2 matched</span> · 6 missing</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-              <div class="flex gap-2">
-                <span class="px-2 py-1 bg-surface-variant text-on-surface-variant text-[10px] uppercase font-bold rounded">Kubernetes</span>
-              </div>
-              <Button variant="ghost" class="text-primary font-bold flex items-center gap-1 hover:bg-primary-fixed/30 px-4 py-2 h-auto rounded-lg transition-colors">
-                View <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </Button>
-            </div>
-          </div>
-
-          <!-- Card 4 (Amber - Medium) -->
-          <div class="bg-white/80 backdrop-blur-md group border border-outline-variant/30 p-6 rounded-xl hover:border-primary/50 transition-all flex flex-col md:flex-row items-center justify-between gap-6 hover:-translate-y-0.5 duration-300">
-            <div class="flex items-center gap-6 w-full md:w-auto">
-              <div class="relative w-16 h-16 flex items-center justify-center">
-                <svg class="w-full h-full -rotate-90" viewBox="0 0 64 64">
-                  <circle class="text-outline-variant/20" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
-                  <circle class="text-amber-500" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.93" stroke-dashoffset="56.3" stroke-width="4" stroke-linecap="round"></circle>
-                </svg>
-                <span class="absolute font-bold text-amber-700">68%</span>
-              </div>
-              <div>
-                <h3 class="text-lg font-bold text-on-surface mb-1">Software Engineer II — Google</h3>
-                <p class="text-sm text-on-surface-variant">05 Jun 2026 · <span class="text-amber-600 font-bold">5 matched</span> · 3 missing</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-              <div class="flex gap-2">
-                <span class="px-2 py-1 bg-surface-variant text-on-surface-variant text-[10px] uppercase font-bold rounded">Algorithms</span>
-              </div>
-              <Button variant="ghost" class="text-primary font-bold flex items-center gap-1 hover:bg-primary-fixed/30 px-4 py-2 h-auto rounded-lg transition-colors">
+              <Button variant="ghost" class="text-primary font-bold flex items-center gap-1 hover:bg-primary-fixed/30 px-4 py-2 h-auto rounded-lg transition-colors" @click.stop="navigateToResult(analysis.id)">
                 View <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
               </Button>
             </div>
@@ -304,19 +192,73 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Card } from '~/components/ui/card/index'
 import { Button } from '~/components/ui/button/index'
+import { useAnalysis } from '~/composables/useAnalysis'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
-  // middleware: 'auth'
+  middleware: 'auth'
 })
 
-// Toggle this to see the empty state
-const hasAnalyses = ref(false)
+const router = useRouter()
+const authStore = useAuthStore()
+const { fetchHistory } = useAnalysis()
 
-const navigateToResult = () => {
-  navigateTo('/result')
+const analyses = ref<any[]>([])
+const isLoading = ref(true)
+const totalAnalyses = ref(0)
+const currentPage = ref(1)
+
+const hasAnalyses = computed(() => analyses.value.length > 0)
+
+const avgScore = computed(() => {
+  if (analyses.value.length === 0) return 0
+  const total = analyses.value.reduce((acc, curr) => acc + curr.match_score, 0)
+  return Math.round(total / analyses.value.length)
+})
+
+const bestScore = computed(() => {
+  if (analyses.value.length === 0) return 0
+  return Math.max(...analyses.value.map(a => a.match_score))
+})
+
+const loadAnalyses = async (page = 1) => {
+  isLoading.value = true
+  const result = await fetchHistory(page, 10)
+  if (result.success && result.data) {
+    analyses.value = result.data.items || []
+    totalAnalyses.value = result.data.total || 0
+    currentPage.value = page
+  }
+  isLoading.value = false
+}
+
+onMounted(() => {
+  loadAnalyses()
+})
+
+const navigateToResult = (id: string) => {
+  router.push(`/result?id=${id}`)
+}
+
+const formatDate = (dateStr: string) => {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+const getScoreColorClass = (score: number, prefix: string) => {
+  if (score >= 80) return `${prefix}-emerald-500`
+  if (score >= 60) return `${prefix}-amber-500`
+  return `${prefix}-error`
+}
+
+const getScoreTextClass = (score: number) => {
+  if (score >= 80) return `text-emerald-700`
+  if (score >= 60) return `text-amber-700`
+  return `text-error`
 }
 </script>
 

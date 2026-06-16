@@ -107,21 +107,27 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Card } from '~/components/ui/card/index'
 import { Button } from '~/components/ui/button/index'
 import { Textarea } from '~/components/ui/textarea/index'
 import { Input } from '~/components/ui/input/index'
 import { Label } from '~/components/ui/label/index'
+import { useAnalysis } from '~/composables/useAnalysis'
 
 definePageMeta({
-  // middleware: 'auth'
+  middleware: 'auth'
 })
+
+const router = useRouter()
+const { analyzeResume } = useAnalysis()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
 const jobDescription = ref('')
 const analysisLabel = ref('')
 const isAnalyzing = ref(false)
+const errorMessage = ref('')
 
 const isValid = computed(() => {
   return selectedFile.value && jobDescription.value.trim().length > 0
@@ -138,17 +144,22 @@ const onFileChange = (event: Event) => {
   }
 }
 
-const startAnalysis = () => {
-  if (!isValid.value) return
+const startAnalysis = async () => {
+  if (!isValid.value || !selectedFile.value) return
   
   isAnalyzing.value = true
+  errorMessage.value = ''
   
-  // Simulate AI Processing and redirect or success state
-  setTimeout(() => {
+  const result = await analyzeResume(selectedFile.value, jobDescription.value, analysisLabel.value || undefined)
+  
+  if (result.success && result.data?.id) {
+    // Redirect to the newly created analysis result page
+    router.push(`/result?id=${result.data.id}`)
+  } else {
     isAnalyzing.value = false
-    // TODO: Redirect to result page
-    alert('Analysis complete! (Simulation)')
-  }, 3000)
+    errorMessage.value = result.error || 'Failed to process analysis. Please try again.'
+    alert(errorMessage.value) // Simple error fallback; can be replaced with Toast
+  }
 }
 </script>
 

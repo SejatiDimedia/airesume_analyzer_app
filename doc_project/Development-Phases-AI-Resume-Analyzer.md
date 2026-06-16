@@ -197,9 +197,9 @@ re_
 
 ### 2.3 Dashboard — History List (2 hari)
 
-- [ ] Buat `composables/useAnalysis.ts`:
+- [x] Buat `composables/useAnalysis.ts`:
   - `fetchAnalyses(page)`, `deleteAnalysis(id)`, `updateLabel(id, label)`
-- [ ] Buat Pinia store `stores/analysis.ts`: state list, pagination, loading
+- [x] Buat Pinia store `stores/analysis.ts`: state list, pagination, loading (diganti dengan component state untuk saat ini)
 - [x] Buat `pages/dashboard.vue`:
   - Header: "My Analyses" + tombol "New Analysis"
   - List analisis
@@ -208,7 +208,7 @@ re_
 - [x] Buat UI Card untuk analisis (Responsive Desktop/Mobile)
 
 **Checklist akhir 2.3:**
-- [ ] Dashboard load list analisis dari API
+- [x] Dashboard load list analisis dari API
 - [ ] Pagination bekerja
 - [ ] Delete analisis → hilang dari list
 - [x] Empty state tampil jika belum ada analisis
@@ -221,14 +221,14 @@ re_
   - Tombol "Analyze Resume"
   - Loading state / UI Feedback
 - [x] Buat UI komponen File Upload
-- [ ] Pemasangan logika submit & redirect ke `/result`
+- [x] Pemasangan logika submit & redirect ke `/result`
 
 **Checklist akhir 2.4:**
-- [ ] Upload file PDF → diterima (Integrasi)
+- [x] Upload file PDF → diterima (Integrasi)
 - [x] Validasi client-side dasar form UI
 - [ ] Upload file > 5MB → error di client sebelum kirim (Logika)
-- [ ] Submit form tanpa file → validasi gagal
-- [ ] Submit form tanpa JD → validasi gagal
+- [x] Submit form tanpa file → validasi gagal
+- [x] Submit form tanpa JD → validasi gagal
 - [x] Loading state muncul saat menunggu
 
 ### 2.5 Analysis Result Page (2 hari)
@@ -243,9 +243,9 @@ re_
 - [x] Result page tampil dengan mockup data lengkap
 - [x] Score gauge animasi
 - [x] Keyword matched dan missing ditampilkan jelas
-- [ ] Data Result dimuat dari API backend (Integrasi)
+- [x] Data Result dimuat dari API backend (Integrasi)
 
-**Deliverable Phase 2:** Semua halaman secara UI berjalan. Jika API sudah tersambung di Phase 3, full flow bisa dicoba end-to-end.
+**Deliverable Phase 2:** Semua halaman secara UI berjalan. Full flow bisa dicoba end-to-end.
 
 ---
 
@@ -288,10 +288,10 @@ re_
 
 ### 3.2 Wire Up ke Analysis Endpoint (1 hari)
 
-- [ ] Update `routers/analysis.py` `POST /analysis`:
+- [x] Update `routers/analysis.py` `POST /analysis`:
   1. Terima file + JD dari request
   2. Call `file_service.extract_text(file)`
-  3. Call `ai_service.analyze_resume(resume_text, job_description)`
+  3. Call `ai_service.analyze_resume(resume_text, job_description)` (Masih Mocking)
   4. Call `analysis_service.create_analysis(...)` dengan result AI
   5. Return response
 - [ ] Tambah rate limit: max 10 request/jam per user di endpoint ini
@@ -308,7 +308,7 @@ re_
 - [ ] Catat estimasi token per request → hitung cost per analisis
 
 **Checklist akhir Phase 3:**
-- [ ] Full flow end-to-end bekerja: upload PDF → dapat AI result
+- [x] Full flow end-to-end bekerja: upload PDF → dapat AI result (Mock Data Backend)
 - [ ] Score masuk akal untuk resume yang relevan vs tidak relevan
 - [ ] Suggestions spesifik dan actionable (bukan generik)
 - [ ] Error OpenAI API → user dapat pesan error yang informatif

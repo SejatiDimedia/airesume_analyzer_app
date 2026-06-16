@@ -44,7 +44,8 @@
               id="email" 
               type="email" 
               placeholder="alex@example.com" 
-              v-bind="email" 
+              v-model="email" 
+              v-bind="emailProps"
               :class="['w-full px-4 py-2 rounded-lg border border-outline-variant bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-base text-on-surface', {'border-destructive focus:ring-destructive/20 focus:border-destructive': errors.email}]" 
             />
             <p class="text-sm font-medium text-destructive mt-1" v-if="errors.email">{{ errors.email }}</p>
@@ -57,7 +58,8 @@
                 id="password" 
                 :type="showPassword ? 'text' : 'password'" 
                 placeholder="••••••••" 
-                v-bind="password" 
+                v-model="password" 
+                v-bind="passwordProps"
                 @input="calculateStrength"
                 :class="['w-full px-4 py-2 rounded-lg border border-outline-variant bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-base text-on-surface pr-10', {'border-destructive focus:ring-destructive/20 focus:border-destructive': errors.password}]" 
               />
@@ -84,7 +86,8 @@
                 id="confirm-password" 
                 :type="showConfirmPassword ? 'text' : 'password'" 
                 placeholder="••••••••" 
-                v-bind="confirmPassword" 
+                v-model="confirmPassword" 
+                v-bind="confirmPasswordProps"
                 :class="['w-full px-4 py-2 rounded-lg border border-outline-variant bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-base text-on-surface pr-10', {'border-destructive focus:ring-destructive/20 focus:border-destructive': errors.confirmPassword}]" 
               />
               <button 
@@ -195,7 +198,8 @@ import { Button } from '~/components/ui/button/index'
 import { Alert, AlertTitle, AlertDescription } from '~/components/ui/alert/index'
 
 definePageMeta({
-  layout: false
+  layout: false,
+  middleware: 'guest'
 })
 
 const { register } = useAuth()
@@ -217,9 +221,9 @@ const { handleSubmit, defineField, errors, isSubmitting } = useForm({
   validationSchema: formSchema,
 })
 
-const [email] = defineField('email')
-const [password] = defineField('password')
-const [confirmPassword] = defineField('confirmPassword')
+const [email, emailProps] = defineField('email')
+const [password, passwordProps] = defineField('password')
+const [confirmPassword, confirmPasswordProps] = defineField('confirmPassword')
 
 const calculateStrength = () => {
   const val = password.value || ''
